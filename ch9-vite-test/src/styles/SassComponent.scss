@@ -1,0 +1,64 @@
+@import '../styles/utils';
+
+:local {
+    .wrapper3 {
+      background: black;
+      padding: 2rem;
+      color: yellow;
+      font-size: 3rem;
+    }
+}
+
+.SassComponent {
+    display: flex;
+    //외부기능 컬러선택 추가
+    // 미디어 반응형 쉽게 해주는 기능
+    background: $oc-gray-8;
+
+    @include media('<768px') {
+      background: $oc-gray-9;
+    }
+
+    .box {
+        background: red;
+        cursor: pointer;
+        transition: all 0.3s ease-in;
+
+        &.red {
+            background: $red;
+            @include square(1);
+        }
+
+        &.orange {
+            background: $orange;
+            @include square(2);
+        }
+
+        &.yellow {
+            background: $yellow;
+            @include square(3);
+        }
+
+        &.green {
+            background: $green;
+            @include square(4);
+        }
+
+        &.blue {
+            background: $blue;
+            @include square(5);
+        }
+
+        &.indigo {
+            background: $indigo;
+            @include square(6);
+        }
+
+        &.violet {
+            background: $violet;
+            @include square(7);
+        }
+
+
+    }
+}
