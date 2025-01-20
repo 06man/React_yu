@@ -9,7 +9,8 @@ function App() {
   return (
     <>
       <div>
-      <h1>ㅎㅇㅎㅇ</h1>
+      <h1 className='react'>ㅎㅇㅎㅇ</h1>
+      <div>Todo App을 만들자!</div>
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
