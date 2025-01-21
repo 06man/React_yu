@@ -1,22 +1,33 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import TodoInsert from "./components/TodoInsert";
+import TodoList from "./components/TodoList";
+import TodoTemplate from "./components/TodoTemplate";
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  const [todos, setTodos] = useState([
+    {
+      id: 1,
+      text: '리액트의 기초 알아보기',
+      checked: true,
+    },
+    {
+      id: 2,
+      text: '컴포넌트 스타일링해 보기',
+      checked: true,
+    },
+    {
+      id: 3,
+      text: '일정 관리 앱 만들어 보기',
+      checked: false,
+    },
+  ]);
 
   return (
-    <>
-      <div>
-      <h1 className='react'>ㅎㅇㅎㅇ</h1>
-      <div>Todo App을 만들자!</div>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <TodoTemplate>
+      <TodoInsert />
+      <TodoList todos={todos} />
+    </TodoTemplate>
+  );
+};
 
-export default App
+export default App;
