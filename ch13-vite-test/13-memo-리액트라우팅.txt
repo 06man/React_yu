@@ -1,0 +1,1424 @@
+13장 리액트 라우터로 SPA 개발하기
+
+13.1 라우팅이란?
+13.2 싱글 페이지 애플리케이션이란?
+13.3 리액트 라우터 적용 및 기본 사용법
+13.4 URL 파라미터와 쿼리스트링
+13.5 중첩된 라우트
+13.6 리액트 라우터 부가 기능
+13.7 정리
+
+13.1 라우팅이란?
+
+웹 애플리케이션에서 라우팅이라는 개념은 
+사용자가 요청한 URL에 따라 알맞은 페이지를 
+보여주는 것을 의미합니다. 
+
+웹 애플리케이션을 만들 때 프로젝트를 
+하나의 페이지로 구성할 수도 있고, 
+
+여러 페이지로 구성할 수도 있겠지요.
+
+예를 들어 
+
+이전에 만들었던 일정 관리 애플리케이션은 
+하나의 페이지로도 충분할 수 있지만, 
+블로그를 만든다고 가정해 봅시다. 
+
+블로그 애플리케이션은 여러 페이지로 구성되어 있습니다. 
+
+어떤 페이지가 필요한지, 한번 생각해볼까요?
+
+  글쓰기 페이지: 새로운 포스트를 작성하는 페이지입니다.
+  
+  포스트 목록 페이지: 블로그에 작성된 여러 포스트의 
+  목록을 보여주는 페이지입니다.
+  
+  포스트 읽기 페이지: 하나의 포스트를 보여주는 페이지입니다.
+  
+이렇게 여러 페이지로 구성된 웹 애플리케이션을 만들 때 
+페이지 별로 컴포넌트들을 분리해가면서 
+
+프로젝트를 관리하기 위해 필요한 것이 바로 라우팅 시스템입니다.
+
+리액트에서 라우트 시스템을 구축하기 위해 
+사용할 수 있는 선택지는 크게 두 가지가 있습니다. 
+
+어떤 선택지가 있는지 한 번 알아보겠습니다.
+
+• 리액트 라우터(React Router): 
+
+이 라이브러리는 리액트의 라우팅 관련 
+라이브러리들 중에서 가장 오래됐고,
+가장 많이 사용되고 있습니다.
+ 
+컴포넌트 기반으로 라우팅 시스템을 설정할 수 있습니다.
+
+• Next.js: 
+
+리액트 프로젝트의 프레임워크입니다. 
+앞에서 사용한 Create React App처럼 
+리액트 프로젝트 설정을 하는 기능, 
+라우팅 시스템, 
+최적화, 
+다국어 시스템 지원, 
+서버 사이드 렌더링 등 다양한 기능을 제공합니다. 
+
+이 프레임워크의 라우팅 시스템은 파일 경로 기반으로 작동합니다. 
+
+리액트 라우터의 대안으로 많이 사용 되고 있습니다.
+
+라우팅 관련 기능은 리액트 라이브러리에서 
+공식적으로 지원하는 것이 아니라 
+서드 파티로 제공되기 때문에, 
+
+이 외에도 react-location, rakkas 등의 프로젝트들이 있습니다.
+
+리액트 라우터를 사용하여 
+
+라우팅 시스템을 구축하겠습니다. 
+이 라이브러리를 선택한 이유는 
+
+가장 인기 있고, 
+
+라우팅 기능에만 집중한 라이브러리이기 때문에 
+
+리액트 프로젝트에서의 라우팅 시스템 개념을 
+익히기에 적합하기 때문입니다. 
+
+오랫동안 개발된 프로젝트인 만큼 다양하고 
+편리한 라우팅 기능을 제공하며 
+
+프로덕션에서 사용하기에 안정적입니다.
+
+리액트 라우터를 사용하면 
+손쉽게 리액트 라우터로 싱글 페이지 
+애플리케이션(Single Page Application)을 만들 수 있습니다.
+
+
+13.2 싱글 페이지 애플리케이션이란?
+싱글 페이지 애플리케이션이란 
+하나의 페이지로 이루어진 애플리케이션이라는 의미입니다. 
+
+리액트 라우터를 사용하여 여러 페이지로 구성된 프로젝트를 
+만들수 있다고 했는데 
+
+왜 싱글 페이지 애플리케이션이라고 불리는지 의문이 들수 있습니다.
+
+이를 이해하기 위해서는 싱글 페이지 
+애플리케이션이란 개념이 생기기 전에 
+사용되던 멀티 페이지 애플리케이션이 어떻게 작동하는지 살펴봐야 합니다.
+
+
+멀티 페이지 애플리케이션에서는 
+사용자가 다른 페이지로 이동할 때마다 
+
+새로운 html을 받아오고,
+
+페이지를 로딩할 때 마다 
+서버에서 CSS, JS, 이미지 파일 등의 리소스를 
+전달받아 브라우저 화면에 보여 주었습니다. 
+
+각 페이지마다 다른 html 파일을 만들어서 제공을 하거나, 
+데이터에 따라 유동적인 html을 생성해 주는 
+템플릿 엔진을 사용하기도 했죠(타임리프,jsp)
+
+
+사용자 인터랙션이 별로 없는 정적인 페이지들은 
+기존의 방식이 적합하지만, 
+
+사용자 인터랙션이 많고 
+다양한 정보를 제공하는 모던 웹 애플리케이션은 
+이 방식이 적합하지 않습니다. 
+
+새로운 페이지를 보여줘야 할 때마다 
+서버 측에서 모든 준비를 한다면 
+
+그만큼 서버의 자원을 사용하는 것이고, 
+트래픽도 더 많이 나올 수 있기 때문이죠.
+
+그래서 리액트 같은 라이브러리를 사용해서 
+뷰 렌더링을 사용자의 브라우저가 담당하도록 하고, 
+
+우선 웹 애플리케이션을 브라우저에 불러와서 
+실행시킨 후에 
+사용자와의 인터랙션이 발생하면 필요한 부분만 
+자바스크립트를 사용하여 업데이트하는 
+방식을 사용하게 됐습니다. 
+
+만약 새로운 데이터가 필요하다면 서버 API를 호출하여 
+필요한 데이터만 새로 불러와 애플리케이션에서 사용할 수 있게 됐죠.
+
+싱글 페이지 애플리케이션
+
+이렇게 html은 한번만 받아와서 
+웹 애플리케이션을 실행 시킨 후, 
+
+이후에는 필요한 데이터만 받아와서 
+화면에 업데이트 하는 것이 싱글 페이지 애플리케이션입니다.
+
+싱글 페이지 애플리케이션은 기술적으로는 
+한 페이지만 존재하지만, 
+
+사용자가 경험하기에는 여러 페이지가 존재하는 
+것 처럼 느낄 수 있습니다.
+
+리액트 라우터 같은 라우팅 시스템은 
+사용자의 브라우저 주소창의 경로에 따라 
+알맞은 페이지를 보여주는데요, 
+
+이후 링크를 눌러서 다른 페이지로 이동할 때 
+서버에 
+다른 페이지의 html을 새로 요청하는 것이 아니라, 
+
+브라우저의 History API를 사용하여 
+브라우저의 주소창의 값만 변경하고 
+
+기존에 페이지에 띄웠던 웹 애플리케이션을 
+그대로 유지하면서 
+라우팅 설정에 따라 또 다른 페이지를 보여주게 됩니다.
+
+
+13.3 리액트 라우터 적용 및 기본 사용법
+
+라우팅과 싱글 페이지 애플리케이션이 무엇인지 배웠으니, 
+이제 본격적으로 리액트 라우터를 사용해 봅시다.
+
+이번 실습은 다음 흐름대로 진행됩니다.
+
+프로젝트 생성 및 라이브러리 설치
+페이지를 만들고 이동해보기
+URL 파라미터와 쿼리스트링 사용해보기
+중첩된 라우트 구현하기
+리액트 라우터의 부가기능 사용해보기
+
+리액트 라우터로 SPA 개발하기
+
+
+13.3.1 프로젝트 생성 및 라이브러리 설치 
+
+우선 리액트 라우터를 적용해 볼 리액트 프로젝트를 새로 생성해 주세요.
+
+$ yarn create react-app router-tutorial
+
+그리고 해당 프로젝트 디렉터리로 이동하여 
+리액트 라우터 라이브러리를 설치하세요. 
+리액트 라우터를 설치할 때는 
+yarn을 사용하여 react-router-dom이라는 라이브러리를 설치
+
+하면 됩니다.
+$ cd router-tutorial
+
+$ yarn add react-router-dom
+
+13.3.2 프로젝트에 라우터 적용 
+
+프로젝트에 리액트 라우터를 적용할 때는 
+src/index.js 파일 에서 
+
+react-router-dom에 내장되어있는
+BrowserRouter 라는 컴포넌트를 사용하여 감싸면 됩니다. 
+
+이 컴포넌트는 웹 애플리케이션에 
+HTML5의 History API를 사용하여 
+
+페이지를 새로 불러오지 않고도 
+주소를 변경하고 현재 주소의 경로에 
+관련된 정보를 리액트 컴포넌트에서 사용할 수 있도록 해 줍니다.
+
+src/index.js
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import './index.css'; 
+import App from './App'; 
+//추가1-1
+import { BrowserRouter } from 'react-router-dom';
+
+ReactDOM.render(
+//추가1-2
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>,
+  document.getElementById('root')
+);
+
+
+13.3.3 페이지 컴포넌트 만들기
+
+이제 리액트 라우터를 통해 여러 페이지로 구성된 
+웹 애플리케이션을 만들기 위하여 
+
+각 페이지에서 사용할 컴포넌트를 만들 차례입니다. 
+
+사용자가 웹 사이트에 들어왔을 때 가장 먼저 
+보여지게 될 
+Home 페이지 컴포넌트와 
+
+웹 사이트를 소개하는 
+About 페이지 컴포넌트를 만들어봅시다.
+
+srC 디렉터리에 pages 경로를 만들고, 
+그 안에 다음 파일들 을 생성하세요.
+
+src/pages/Home.js
+
+const Home = () => {
+  return (
+    <div>
+      <p>가장 먼저 보여지는 페이지입니다.</p>
+    </div>
+  );
+};
+
+export default Home;
+
+
+
+src/pages/About.js
+
+const About = () => {
+  return (
+    <div>
+      <h1>소개</h1>
+      <p>리액트 라우터를 사용해 보는 프로젝트입니다.</p>
+    </div>
+  );
+};
+
+export default About;
+
+
+
+이제 페이지로 사용할 컴포넌트들이 준비되었습니다. 
+이 컴 포넌트들을 꼭 pages 경로에 넣을 필요는 없습니다. 
+
+이는 단순히 페이지를 위한 컴포넌트들을 
+다른 파일들과 구분하기 위함이며, 
+
+routes라는 이름을 써도되고 
+그냥 src 경로에 바로 생성해도 문제가 되지는 않습니다.
+
+
+13.3.4 Route 컴포넌트로 특정 경로에 원하는 컴포넌트 보여주기
+
+사용자의 브라우저 주소 경로에 따라 우리가 원하는 
+컴포넌트를 보여주려면 
+
+Route라는 컴포넌트를 통해 라우트 설정을 해주어야 합니다.
+
+Route 컴포넌트는 다음과 같이 사용합니다.
+
+〈Route path="주소규칙" element={보여 줄 컴포넌트 JSX} />
+
+그리고 Route 컴포넌트는 Routes 컴포넌트 내부에서 사용되어야 합니다.
+
+App 컴포넌트에서 
+Route 컴포넌트를 사용하여 다음과 같이 라우트를 설정해보세요.
+
+src/App.js
+//추가
+import { Route, Routes } from 'react-router-dom';
+import About from './pages/About';
+import Home from './pages/Home';
+
+const App = () => {
+  return (
+  //추가
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/about" element={<About />} />
+    </Routes>
+  );
+};
+
+export default App;
+
+
+이제 yarn start를 입력하여 개발 서버를 시작 해보세요. 
+첫 화면에 다음과 같이 Home 컴포넌트가 나타났나요?
+
+
+
+13.3.5 Link 컴포넌트를 사용하여 다른 페이지로 이동하는 링크 보여주기 
+
+이번에는 Link 컴포넌트를 사용하여 
+다른 페이지로 이동하는 링크를 보여주는 방법을 알아보겠습니다. 
+
+웹 페이지에는 원래 링크를 보여줄 때 
+a 태그를 사용하는데요, 
+
+리액트 라우터를 사용하는 프로젝트에서는 
+a 태그를 바로 사용하면 안됩니다. 
+
+왜냐하면 a 태그를 클릭하여 페이지를 이동할 때 
+브라우저에서는 페이지를 새로 불러오게 되기 때문입니다.
+
+Link 컴포넌트 역시 a 태그를 사용하긴 하지만, 
+페이지를 새로 불러오는 것을 막고 
+History API를 통해 
+브라우저 주소의 경로만 바꾸는 기능이 내장되어 있습니다.
+
+Link 컴포넌트는 다음과 같이 사용합니다.
+<Link to="경로">링크 이름</Link>
+
+
+Home 페이지에서 About 페이지로 이동할 수 있도록 
+Link 컴포넌트를 Home 페이지 컴포넌트에서 사용해봅시다.
+
+src/pages/Home.js
+
+//추가
+import { Link } from 'react-router-dom';
+
+const Home = () => {
+  return (
+    <div>
+      <h1>홈</h1>
+      <p>가장 먼저 보여지는 페이지입니다.</p>
+	  //추가
+      <Link to="/about">소개</Link>
+    </div>
+  );
+};
+
+export default Home;
+
+
+이제 브라우저에서 방금 만든 소개 링크를 눌러보세요.
+
+Link 컴포넌트 사용하기
+
+
+13.4 URL 파라미터와 쿼리스트링
+
+페이지 주소를 정의할 때 가끔은 유동적인 값을 
+사용해야 할 때도 있습니다. 
+다음과 같이 말이죠.
+
+  URL 파라미터 예시: /profile/veLopert
+  쿼리스트링 예시:/Articles?page=1&keyword=react
+  
+URL 파라미터는 
+주소의 경로에 유동적인 값을 넣는 형태고, 
+
+쿼리스트링은 주소의 뒷부분에 
+? 문자열 이후에 key=value 로 값을 정의하며 
+&로 구분하는 형태입니다.
+
+URL 파라미터는 주로 ID 또는 이름을 사용하여 
+특정 데이터를 조회할 때 사용하고, 
+
+쿼리스트링(Querystring)은 
+키워드 검색, 페이지네이션, 정렬 방식 등 
+데이터 조회에 필요한 옵션을 전달할 때 사용합니다.
+
+
+13.4.1 URL 파라미터
+
+우선 URL 파라미터를 사용하는 방법을 알아봅시다. 
+이를 사용하기 위해 새로운 페이지 컴포넌트를 만들겠습니다.
+
+pages 경로에 다음과 같이 Profile 컴포넌트를 작성하세요.
+
+src/pages/Profile.js
+
+
+import { useParams } from 'react-router-dom';
+
+const data = {
+  velopert: {
+    name: '김민준',
+    description: '리액트를 좋아하는 개발자',
+  },
+  gildong: {
+    name: '홍길동',
+    description: '고전 소설 홍길동전의 주인공',
+  },
+};
+
+const Profile = () => {
+  const params = useParams(); 
+  // useParams 호출 형태 수정
+  const profile = data[params.username]; 
+  // params에서 username 가져오기
+
+  return (
+    <div>
+      <h1>사용자 프로필</h1>
+      {profile ? (
+        <div>
+          <h2>{profile.name}</h2>
+          <p>{profile.description}</p>
+        </div>
+      ) : (
+        <p>존재하지 않는 프로필입니다.</p> // 닫는 태그 수정
+      )}
+    </div>
+  );
+};
+
+export default Profile;
+
+
+
+URL 파라미터는 useParams라는 Hook을 사용하여 
+객체 형태로 조회할 수 있습니다. 
+
+URL 파라미터의 이름은 라우트 설정을 할 때 
+
+Route 컴포넌트의 path props를 통해 설정합니다.
+
+위 코드에서는 data 객체에 
+예시 프로필 정보들을 key-value 형태로 담아두었습니다. 
+
+그리고 Profile 컴포넌트에서는 username 
+URL 파라미터를 통하여 프로필을 조회한 뒤에 
+
+프로필이 존재하지 않으면 존재하지 않는 프로필입니다.'라는
+문구를 보여주고 
+존재한다면 프로필 정보를 보여주도록 로직을 작성했습니다.
+
+컴포넌트를 다 작성했으면 App 컴포넌트 파일을 열어서 
+새로운 라우트를 다음과 같이 설정해주세요.
+
+
+src/App.js
+
+import { Route, Routes } from 'react-router-dom';
+import About from './pages/About';
+import Home from './pages/Home';
+//추가
+import Profile from './pages/Profile';
+
+const App = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/about" element={<About />} />
+	  //추가
+      <Route path="/profiles/:username" element={<Profile />} />
+    </Routes>
+  );
+};
+
+export default App;
+
+
+URL 파라미터는 /profiles/: username과 같이 
+경로에 :를 사용하여 설정합니다. 
+
+만약 URL 파라미터가 여러 개인 경우 에는 
+/profiles/:username/:field와 같은 형태로 
+설정할수 있습니다.
+
+이제 Profile 페이지로 이동할 수 있도록 
+Home 페이지에 Link를 더 만들어보세요. 
+링크가 여러 개이기 때문에 urL 태그를 사용하여 
+리스트 형태로 보여주겠습니다.
+
+sre/pages/Home.js
+
+import { Link } from 'react-router-dom';
+
+const Home = () => {
+  return (
+    <div>
+      <h1>홈</h1>
+      <p>가장 먼저 보여지는 페이지입니다.</p>
+      <ul>
+        <li>
+          <Link to="/about">소개</Link>
+        </li>
+        <li>
+          <Link to="/profiles/velopert">velopert의 프로필</Link>
+        </li>
+        <li>
+          <Link to="/profiles/gildong">gildong의 프로필</Link>
+        </li>
+        <li>
+          <Link to="/profiles/void">존재하지 않는 프로필</Link>
+        </li>
+      </ul>
+    </div>
+  );
+};
+
+export default Home;
+
+
+프로필 링크 추가
+
+링크가 리스트 형태로 잘 보여졌나요? 
+새로 만든 링크를 눌러서 Profile 페이지로 이동해보세요.
+
+Profile 페이지
+
+URL 파라미터에 따라 다른 결과물이 잘 보여지고 있나요?
+
+
+13.4.2 쿼리스트링
+
+이번에는 라우트에서 쿼리스트링을 사용하는 방법을 알아봅시다. 
+쿼리스트링을 사용할 때는 URL 파라미터와 달리 
+
+Route 컴포넌트를 사용할 때 별도로 설정해야 하는 것이 없습니다.
+
+우선 쿼리스트링을 화면에 띄워보는 작업부터 해볼까요? 
+About 페이지 컴포넌트를 다음과 같이 수정해보세요.
+
+src/pages/About.js
+//추가
+import { useLocation } from 'react-router-dom';
+
+const About = () => {
+  //추가
+  const location = useLocation();
+  // useLocation으로 현재 경로 정보 가져오기
+
+  return (
+    <div>
+      <h1>소개</h1>
+      <p>리액트 라우터를 사용해 보는 프로젝트입니다.</p>
+      {/* //추가 */}
+      <p>쿼리스트링 location.search: {location.search}</p>
+      <p>현재 주소의 경로 location.pathname: {location.pathname}</p>
+      <p>location.hash: {location.hash}</p>
+      <p>location.state: {location.state}</p>
+      <p>location.key: {location.key}</p>
+    </div>
+  );
+};
+
+export default About;
+
+
+
+
+위 컴포넌트에서는 useLocation이라는 Hook을 사용했습니다. 
+이 Hook은 Location 객체를 반환하는데요, 
+
+이 객체는 현재 사용자가 보고 있는 페이지의 정보를 지니고 있습니다.
+
+즉, 이 객체에는 다음과 같은 값들이 있습니다.
+
+  pathname: 현재 주소의 경로 (쿼리스트링 제외)
+  
+  search: 맨 앞의 ? 문자를 포함한 쿼리스트링 값
+
+  hash: 주소의 # 문자열 뒤의 값 
+  (주로 History API가 지원되지 않는 
+  구형 브라우저에서 클라이언트 라우팅을 
+  사용할 때 쓰는 해시 라우터에서 사용합니다)
+  
+  state: 페이지로 이동할 때 임의로 넣을 수 있는 상태값
+  
+  key: Location 객체의 고유값, 
+  초기에는 default이며 페이지가 변경될 때마다 
+  고유의 값이 생성됨
+  
+쿼리스트링은 location.search 값을 통해 조회할 수 있습니다. 
+주소창에 
+http://localhost:5173/about?detail=true&mode=1
+라고 직접 입력해서 어떤 값이 나타나는지 확인해 보세요.
+
+쿼리스트링 값이 현재 ?detail=true&mode=1로 표시되고 있습니다. 
+이 문자열에서 앞에 있는 ?를 지우고, 
+& 문자열로 분리한 뒤 key와 value를 
+파싱하는 작업을 해야 하는데요, 
+
+이 작업은 보통 npm에서 qs 또는 querystring 패키지를 
+설치해 처리할 수 있습니다.
+
+쿼리스트링을 따로 파싱까지 해야 된다면 
+번거로울 수도 있는데, 
+다행히 리액트 라우터에서는 
+v6부터 usesearchParams라는 
+Hook을 통해서 쿼리스트링을 더욱 쉽게 다룰 수 있게 됐습니다.
+
+다음은 이 Hook을 사용해 쿼리스트링을 쉽게 파싱하여 
+사용하는 예시입니다.
+
+기존 코드에  추가 해보기
+
+src/pages/About.js
+//추가
+import { useSearchParams } from 'react-router-dom';
+
+const About = () => {
+//추가
+  const [searchParams, setSearchParams] = useSearchParams(); // useSearchParams 호출 형태 수정
+  const detail = searchParams.get('detail'); // 'detail' 값 가져오기
+  const mode = searchParams.get('mode'); // 'mode' 값 가져오기
+
+//추가
+  // detail 값을 토글하는 함수
+  const onToggleDetail = () => {
+    setSearchParams({ mode, detail: detail === 'true' ? 'false' : 'true' });
+  };
+
+//추가
+  // mode 값을 증가시키는 함수
+  const onIncreaseMode = () => {
+    const nextMode = mode === null ? 1 : parseInt(mode) + 1;
+    setSearchParams({ mode: nextMode, detail });
+  };
+
+  return (
+    <div>
+      <h1>소개</h1>
+      <p>리액트 라우터를 사용해 보는 프로젝트입니다.</p>
+	  
+	  //추가
+      <p>detail: {detail}</p>
+      <p>mode: {mode}</p>
+      <button onClick={onToggleDetail}>Toggle detail</button>
+      <button onClick={onIncreaseMode}>mode + 1</button>
+    </div>
+  );
+};
+
+export default About;
+
+
+useSearchparams는 배열 타입의 값을 반환하며, 
+
+첫 번째 원소는 쿼리파라미터를 조회하거나 
+수정하는 메서드들이 담긴 객체를 반환합니다. 
+
+get 메서드를 통해 특정 쿼리파라미터를 조회할 수 있고, 
+set 메서드를 통해 특정 쿼리파라미터를 업데이트할 수 있습니다. 
+
+만약 조회시 쿼리파라미터가 존재하지 않는다면 null로 조회됩니다. 
+
+두 번째 원소는 쿼리파라미터를 객체 형태로 
+업데이트할 수 있는 함수를 반환합니다.
+
+쿼리파라미터를 사용할 때 주의할 점은 
+쿼리파라미터를 조회 할 때 
+값은 무조건 문자열 타입이라는 점입니다. 
+
+즉, true 또는 false 값을 넣는다면 값을 비교할 때 
+꼭 'true'와 같이 따옴표로 감싸서 비교를 해야 하고, 
+숫자를 다룬다면 parseInt를 사용하여 숫자 타입으로 변환을 해야 합니다.
+
+
+13.5 중첩된 라우트
+
+이번에는 리액트 라우터에서 중첩된 라우트를 다룰 때 
+어떻게 해야 하는지에 대해 배워보겠습니다. 
+
+우선 중첩된 라우트를 이해하기 위해, 
+게시글 목록을 보여주는 페이지와 게시글을 읽는 페이지를 만들어보겠습니다.
+
+pages 디렉터리에 다음 페이지 컴포넌트를 만들어보세요.
+
+src/pages/Articles.js
+
+import { Link } from 'react-router-dom';
+
+const Articles = () => {
+  return (
+    <div>
+      <ul>
+        <li>
+          <Link to="/Articles/1">게시글 1</Link>
+        </li>
+        <li>
+          <Link to="/Articles/2">게시글 2</Link>
+        </li>
+        <li>
+          <Link to="/Articles/3">게시글 3</Link>
+        </li>
+      </ul>
+    </div>
+  );
+};
+
+export default Articles;
+
+
+sro/pages/Article.js
+
+import { useParams } from 'react-router-dom';
+
+const Article = () => {
+  const { id } = useParams(); 
+
+  return (
+    <div>
+      <h2>게시글 {id}</h2> 
+    </div>
+  );
+};
+
+export default Article;
+
+
+
+이렇게 두 컴포넌트를 다 만들었다면 
+App 컴포넌트에서 해당 페이지들의 라우트를 설정해보세요.
+
+src/App.js
+
+import { Route, Routes } from 'react-router-dom';
+import About from './pages/About';
+import Home from './pages/Home';
+import Profile from './pages/Profile';
+//추가
+import Article from './pages/Article';
+import Articles from './pages/Articles';
+
+const App = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/profiles/:username" element={<Profile />} />
+	  //추가
+      <Route path="/Articles" element={<Articles />} />
+      <Route path="/Articles/:id" element={<Article />} />
+    </Routes>
+  );
+};
+
+export default App;
+
+
+
+그 다음에는 Home 컴포넌트에서 
+게시글 목록 페이지로 가는 링크를 추가하세요.
+
+src/pages/Home.js
+
+import { Link } from 'react-router-dom';
+
+const Home = () => {
+  return (
+    <div>
+      <h1>홈</h1>
+      <p>가장 먼저 보여지는 페이지입니다.</p>
+      <ul>
+        <li>
+          <Link to="/about">소개</Link>
+        </li>
+        <li>
+          <Link to="/profiles/velopert">velopert의 프로필</Link>
+        </li>
+        <li>
+          <Link to="/profiles/gildong">gildong의 프로필</Link>
+        </li>
+        <li>
+          <Link to="/profiles/void">존재하지 않는 프로필</Link>
+        </li>
+		{/* 추가 */}
+        <li>
+          <Link to="/Articles">게시글 목록</Link>
+        </li>
+      </ul>
+    </div>
+  );
+};
+
+export default Home;
+
+
+
+이제 게시글 목록 페이지를 열어서 목록이 잘 나타나는지 확인해보고, 
+게시글의 링크를 눌러 게시글 읽기 페이지도 잘 나 타나는지 확인해보세요.
+
+게시글 목록, 게시글 읽기
+
+게시글 목록 페이지에서 게시글을 열었을 때, 
+게시글 하단에 목록을 보여줘야 한다면 어떨까요?
+
+만약 기존 방식으로 구현을 한다면 다음과 같이
+ArticleList 컴포넌트를 따로 만들어서 
+각 페이지 컴포넌트에서 사용했을 겁니다.
+
+〈dIv>
+<h2>게시글 {id}</hz>
+〈ArticleList />
+</dlv>
+
+그러나 중첩된 라우트를 사용한다면 
+좀 더 나은 방식으로 구현할 수 있답니다. 
+
+이번에는 중첩된 라우트 형태로 라우트를 설정해보겠습니다.
+App 컴포넌트를 다음과 같이 수정해보세요.
+
+주의사항, 중첩 라우팅은 Children 으로 표기 주의, 
+예시, <Route> </Route> 사이에 표기하기.
+<Route path="/Articles" element={<Articles />} >
+    <Route path=":id" element={<Article />} />
+</Route>
+
+src/ App.js
+
+import { Route, Routes } from 'react-router-dom';
+import About from './pages/About';
+import Article from './pages/Article';
+import Articles from './pages/Articles';
+import Home from './pages/Home';
+import Profile from './pages/Profile';
+
+const App = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/profiles/:username" element={<Profile />} />
+      <Route path="/Articles" element={<Articles />}>
+        <Route path=":id" element={<Article />} />
+      </Route>
+    </Routes>
+  );
+};
+
+export default App;
+
+
+
+다음으로 Articles 컴포넌트에 리액트 라우터에서 
+제공하는 Outlet 이라는 컴포넌트를 사용해줘야 합니다. 
+
+이 컴포넌트는 Route의 Children으로 들어가는 JSX 엘리먼트를 
+보여주는 역할을 합니다. 
+
+이 예제의 경우라면 다음 내용이 Outlet 컴포넌트를 통해서 보여지겠지요.
+
+<Route path=":id" element={<Article />} >
+
+Articles 컴포넌트를 다음과 같이 수정해주세요.
+
+src/pages/Articles.js
+
+//추가
+import { Link, Outlet } from 'react-router-dom';
+
+const Articles = () => {
+  return (
+    <div>
+	{/* 추가 */}
+      <Outlet />
+      <ul>
+        <li>
+          <Link to="/articles/1">게시글 1</Link>
+        </li>
+        <li>
+          <Link to="/articles/2">게시글 2</Link>
+        </li>
+        <li>
+          <Link to="/articles/3">게시글 3</Link>
+        </li>
+      </ul>
+    </div>
+  );
+};
+
+export default Articles;
+
+
+
+위 코드에서 Outlet 컴포넌트가 사용된 자리에 
+중첩된 라우트가 보여지게 됩니다.
+
+이제 /Articles/1 경로에 들어가볼까요?
+
+중첩된 라우트
+
+게시글 하단에 게시글 목록이 잘 나타나는지 확인하세요.
+
+
+13.5.1 공통 레이아웃 컴포넌트 
+
+중첩된 라우트와 Outlet은 페이지끼리 공통적으로 
+보여줘야 하는 레이아웃이 있을 때도 유용하게 사용할 수 있습니다
+.
+예를 들어
+Home, About, Profile 페이지 상단에 
+헤더를 보여 줘야 하는 상황을 가정해봅시다. 
+
+가장 먼저 Header 컴포넌트를 따로 만들어두고 
+각 페이지 컴포넌트에서 재사용하는 방법을 생각할 것입니다. 
+
+물론 이 방법이 틀린 것은 아니지만, 
+방금 배운 중첩된 라우트와 Outlet을 활용하여 
+구현할 수도 있습니다. 
+
+중첩된 라우트를 사용하는 방식을 사용하면 
+컴포넌트를 한번만 사용해도 된다는 장점이 있죠. 
+
+상황에 따라 그리고 여러분의 취향에 따라 구현하면 됩니다.
+
+이번에는 중첩된 라우트를 통해 공통 레이아웃 컴포넌트를 사용해봅시다.
+
+우선 공통 레이아웃을 위한 Layout 컴포넌트를 src 디렉터리에 만드세요.
+
+src/Layout.js
+
+import { Outlet } from 'react-router-dom';
+
+const Layout = () => {
+  return (
+    <div>
+      <header style={{ background: 'lightgray', padding: 16, fontSize: 24 }}>
+        Header
+      </header>
+      <main>
+        <Outlet />
+      </main>
+    </div>
+  );
+};
+
+export default Layout;
+
+
+각 페이지 컴포넌트가 보여져야 하는 부분에 
+Outlet 컴포넌트를 사용해주었습니다. 
+
+컴포넌트를 다 작성했으면 App 컴포 넌트를 다음과 같이 수정하세요.
+
+src/App.js
+
+import { Route, Routes } from 'react-router-dom';
+//추가
+import Layout from './Layout';
+import About from './pages/About';
+import Article from './pages/Article';
+import Articles from './pages/Articles';
+import Home from './pages/Home';
+import Profile from './pages/Profile';
+
+const App = () => {
+  return (
+    <Routes>
+      {/*추가 Layout을 적용하는 그룹 */}
+      <Route element={<Layout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/profiles/:username" element={<Profile />} />
+      </Route>
+
+      {/* Articles 관련 라우트 */}
+      <Route path="/articles" element={<Articles />}>
+        <Route path=":id" element={<Article />} />
+      </Route>
+    </Routes>
+  );
+};
+
+export default App;
+
+
+
+이제 Home 페이지에 들어가 보세요.
+
+공통 레이아웃
+
+상단에 헤더가 잘 나타났나요?
+
+
+13.5.2 index props
+
+Route 컴포넌트에는 index라는 props가 있습니다. 
+이 props는 path="/"와 동일한 의미를 가집니다.
+
+Home 컴포넌트가 사용된 Route 컴포넌트를 다음과 같이 변경해보세요.
+
+src/App.js
+
+import { Route, Routes } from 'react-router-dom';
+import Layout from './Layout';
+import About from './pages/About';
+import Article from './pages/Article';
+import Articles from './pages/Articles';
+import Home from './pages/Home';
+import Profile from './pages/Profile';
+
+const App = () => {
+  return (
+    <Routes>
+      {/* Layout 적용 */}
+      <Route path="/" element={<Layout />}>
+        {/* 변경 기본 경로(Home) */}
+        <Route index element={<Home />} />
+        {/* About 페이지 */}
+        <Route path="about" element={<About />} />
+        {/* Profile 페이지 */}
+        <Route path="profiles/:username" element={<Profile />} />
+      </Route>
+
+      {/* Articles 관련 라우트 */}
+      <Route path="/articles" element={<Articles />}>
+        <Route path=":id" element={<Article />} />
+      </Route>
+    </Routes>
+  );
+};
+
+export default App;
+
+
+
+/ 경로로 들어갔을 때 Home 페이지가 여전히 잘 나오고 있나요? 
+index prop를 사용하면 상위 라우트의 경로와 일치하지만, 
+그 이후에 경로가 주어지지 않았을 때 
+보여지는 라우트를 설정할 수 있습니다. 
+
+path="/"와 동일한 역할을 하며 이를 좀 더 명시적으로 표현하는 방법입니다.
+
+
+13.6 리액트 라우터 부가 기능
+
+리액트 라우터는 웹 애플리케이션에서 라우팅과 
+관련된 작업 을 할 때 사용할 수 있는 
+유용한 API들을 제공합니다. 
+자주 사용되는 것들을 알아봅시다.
+
+
+13.6.1 useNavigate
+
+useNavigate는 Link 컴포넌트를 사용하지 않고 
+다른 페이지로 이동해야 하는 상황에 사용하는 Hook입니다.
+
+Layout 컴포넌트를 다음과 같이 수정해보세요.
+
+src/Layout.js
+
+import { Outlet, useNavigate } from 'react-router-dom';
+
+const Layout = () => {
+//추가
+  const navigate = useNavigate();
+
+  const goBack = () => {
+    // 이전 페이지로 이동
+    navigate(-1);
+  };
+
+  const goArticles = () => {
+    // Articles 경로로 이동
+    navigate('/articles');
+  };
+
+  return (
+    <div>
+      <header style={{ background: 'lightgray', padding: 16, fontSize: 24 }}>
+	  {/* 추가 */}
+        <button onClick={goBack}>뒤로가기</button>
+        <button onClick={goArticles}>게시글 목록</button>
+      </header>
+      <main>
+        <Outlet />
+      </main>
+    </div>
+  );
+};
+
+export default Layout;
+
+
+
+헤더에 버튼이 두 개 나타났나요?
+useNavigate
+
+버튼을 눌렀을 때 정상적으로 이전 페이지나, 
+게시글 목록 페이지로 이동이 되는지 확인하세요.
+
+navigate 함수를 사용할 때 
+파라미터가 숫자 타입이라면 
+앞으로 가거나, 뒤로 갑니다. 
+
+예를 들어 navigate(-1)을 하면 뒤로 한 번 가고 
+
+navigate(-2)를 하면 뒤로 두 번 갑니다.
+
+반대로 navigate(1)을 하면 앞으로 한 번 갑니다. 
+
+물론 뒤로 가기를 한번 한 상태여야 합니다.
+
+다른 페이지로 이동을 할 때 repLace라는 옵션이 있는데요, 
+이 옵션을 사용하면 페이지를 이동할 때 
+
+현재 페이지를 페이지 기록에 남기지 않습니다.
+방금 작성했던 goArticles 함수를 다음과 같이 수정해보세요.
+
+sre/Layout.js - goArticles
+
+const goArticles = () => {
+  navigate('/articles', { replace: true });
+};
+
+
+수정한 다음에 / 경로로 들어가서 
+Home 페이지를 띄운 뒤, 
+
+소개 링크를 눌러서 About 페이지로 이동하세요. 
+그리고 상단 의 게시글 목록 페이지를 눌러보세요. 
+그 상태에서 브라우저의 뒤로가기 버튼을 눌러 이전 페이지로 이동해보세요.
+
+만약 { replace: true } 설정이 없었다면 
+직전에 봤던 페이지인 About 페이지가 나타나야 하지만, 
+
+이 옵션이 활성화 되어 있기 때문에, 
+그 전의 페이지인 Home 페이지가 나타나게 됩니다.
+
+
+13.6.2 NavLink
+
+
+NavLink 컴포넌트는 링크에서 사용하는 경로가 
+현재 라우트의 경로와 일치하는 경우 
+특정 스타일 또는 CSS 클래스를 적용하는 컴포넌트입니다.
+
+이 컴포넌트의 Style과 CLassName은 { IsActive: boolean }을 
+파라미터로 전달받는 함수 타입의 값을 전달합니다. 
+예시를 확인해볼까요?
+
+import { NavLink, Outlet } from 'react-router-dom';
+
+const Articles = () => {
+  const activeStyle = {
+    color: 'green',
+    fontSize: 21,
+  };
+
+  return (
+    <div>
+      <Outlet />
+      <ul>
+        <li>
+          <NavLink
+            to="/articles/1"
+            style={({ isActive }) => (isActive ? activeStyle : undefined)}
+          >
+            게시글 1
+          </NavLink>
+        </li>
+        <li>
+          <NavLink
+            to="/articles/2"
+            style={({ isActive }) => (isActive ? activeStyle : undefined)}
+          >
+            게시글 2
+          </NavLink>
+        </li>
+        <li>
+          <NavLink
+            to="/articles/3"
+            style={({ isActive }) => (isActive ? activeStyle : undefined)}
+          >
+            게시글 3
+          </NavLink>
+        </li>
+      </ul>
+    </div>
+  );
+};
+
+export default Articles;
+
+NavLink
+
+현재 보고 있는 게시글의 링크의 텍스트가 
+더 커지고 초록색으로 잘 변했나요?
+
+현재 반복되는 코드가 여러 번 사용되고 있지요? 
+여러분이 나중에 실제로 비슷한 작업을 하게 된다면 
+
+현재 NavLink를 감싼 또 다른 컴포넌트를 만들어서 
+다음과 같이 리팩터링하여 사용하는 것을 권장합니다.
+
+src/pages/Articles.js
+
+
+import { NavLink, Outlet } from 'react-router-dom';
+
+const Articles = () => {
+  return (
+    <div>
+      <Outlet />
+      <ul>
+        <ArticleItem id={1} />
+        <ArticleItem id={2} />
+        <ArticleItem id={3} />
+      </ul>
+    </div>
+  );
+};
+
+const ArticleItem = ({ id }) => {
+  const activeStyle = {
+    color: 'green',
+    fontSize: 21,
+  };
+
+  return (
+    <li>
+      <NavLink
+        to={`/articles/${id}`}
+        style={({ isActive }) => (isActive ? activeStyle : undefined)}
+      >
+        게시글 {id}
+      </NavLink>
+    </li>
+  );
+};
+
+export default Articles;
+
+
+13.6.3 NotFound 페이지 만들기 
+
+이번에는 NotFound 페이지를 만드는 방법을 배워봅시다. 
+이 페이지는 사전에 정의되지 않는 경로에 사용자가 진입했을 때 
+보여주는 페이지입니다. 
+
+즉, 페이지를 찾을 수 없을 때 나타나는 페이지입니다.
+
+우선 pages 디렉터리에 이 컴포넌트를 만들어주세요.
+
+src/pages/NotFound.js
+
+const NotFound = () => {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 64,
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+      }}
+    >
+      404
+    </div>
+  );
+};
+
+export default NotFound;
+
+
+
+그 다음에 App 컴포넌트를 다음과 같이 수정해보세요.
+src/App.js
+
+import { Route, Routes } from 'react-router-dom';
+import Layout from './Layout';
+import About from './pages/About';
+import Article from './pages/Article';
+import Articles from './pages/Articles';
+import Home from './pages/Home';
+//추가
+import NotFound from './pages/NotFound';
+import Profile from './pages/Profile';
+
+const App = () => {
+  return (
+    <Routes>
+      {/* Layout 적용 */}
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Home />} />
+        <Route path="about" element={<About />} />
+        <Route path="profiles/:username" element={<Profile />} />
+      </Route>
+      
+      {/* Articles 관련 라우트 */}
+      <Route path="/articles" element={<Articles />}>
+        <Route path=":id" element={<Article />} />
+      </Route>
+
+      {/* 추가 Not Found 페이지 */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+export default App;
+
+
+
+여기서 *는 wildcard 문자인데요, 
+아무 텍스트나 매칭한다는 뜻입니다. 
+
+이 라우트 엘리먼트의 상단에 위치하는 라우트들의 
+규칙을 모두 확인하고, 
+일치하는 라우트가 없다면 이 라우트가 화면에 나타나게 됩니다.
+
+
+13.6.4 Navgate 컴포넌트
+
+Navigate 컴포넌트는 컴포넌트를 화면에 보여주는 순간 
+다른 페이지로 이동을 하고 싶을 때 사용하는 컴포넌트입니다.
+
+즉, 페이지를 리다이렉트하고 싶을 때 사용합니다. 
+예를 들어 
+사용자의 로그인이 필요한 페이지인데 로그인을 안 했다면 
+로그인 페이지를 보여줘야겠죠? 그
+런 상황에 사용할 수 있습니다.
+
+먼저 pages 디렉터리에 다음 두 페이지 컴포넌트를 만드세요.
+
+src/pages/Login.js
+
+const Login = () => {
+  return <div>로그인 페이지</div>;
+};
+
+export default Login;
+
+
+
+sro/pages/MyPage.js
+
+import { Navigate } from 'react-router-dom';
+
+const MyPage = () => {
+  const isLoggedIn = false;
+
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace={true} />;
+  }
+
+  return <div>마이 페이지</div>;
+};
+
+export default MyPage;
+
+
+여기서 isLoggedIn은 현재 false라는 고정값을 가지고 있지만, 
+이 값이 로그인 상태에 따라 true 또는 false를 가리킨다고 가정해봅시다.
+
+위 컴포넌트에서는 만약 이 값이 false라면 
+Navigate 컴포넌트를 통해 /Login 경로로 이동합니다. 
+
+여기서 repLace props는 useNavigate에서 설명한 것과 동일합니다. 
+페이지를 이동할 때 현재 페이지를 기록에 남기지 않기 때문에 
+
+이동 후 뒤로가기를 눌렀을 때 두 페이지 전의 페이지로 이동합니다.
+컴포넌트를 다 작성했으면 App 컴포넌트를 다음과 같이 수정 해주세요.
+
+src/App.js
+
+...
+import Login from './pages/Login';
+import MyPage from './pages/MyPage';
+추가
+<Route path="login" element={<Login />} />
+<Route path="mypage" element={<MyPage />} />
+
+
+이제 브라우저 주소창에 /mypage 경로를 직접 입력해 들어가보세요.
+페이지가 로딩되는 순간 바로 Login 페이지로 이 동이 되나요?
+
+
+13.7 정리
+이 장에서는 리액트 라우터를 사용하여 주소 경로에 따라 
+다양한 페이지를 보여 주는 방법을 알아보았습니다. 
+
+이어지는 14장에서는 지금까지 배웠던 지식들을 활용하여 
+최신 뉴스 목록을 보여 주는 프로젝트를 만들어 보겠습니다.

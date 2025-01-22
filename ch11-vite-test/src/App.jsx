@@ -83,6 +83,18 @@ function App() {
   const checkedTodos = todos.filter((todo) => todo.checked);
   const uncheckedTodos = todos.filter((todo) => !todo.checked);
 
+  //실습4,
+  const removeChecked = useCallback(() => {
+    setTodos(
+      (todos) =>
+        todos.filter((todo) => !todo.checked))
+    }
+    , []
+  )
+
+  //실습 5
+  const [search, setSearch] = useState("");
+  const searchedTodos = todos.filter((todo) => todo.text.toLocaleLowerCase().includes(search.toLocaleLowerCase()))
   return (
     <>
       <h1 className='react'>ch10 일정관리 애플리케이션 예제</h1>
@@ -90,6 +102,15 @@ function App() {
         {/* Todo App을 만들자! */}
         {/* 추가2-4, 부모 -> 자식, props 전달, onInsert*/}
         <TodoInsert onInsert={onInsert} />
+        <div>
+          <input type='text' placeholder='검색어'
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}/>
+          <h3>검색된 목록</h3>
+          <h3>검색된 갯수 : {searchedTodos.length}</h3>
+          <TodoList todos={searchedTodos} onRemove={onRemove} onToggle={onToggle} />
+          <button onClick={removeChecked}>완료된 항목 삭제</button>
+        </div>
         <div>
           완료된 항목의 갯수 : {checkedCount}
         </div>
