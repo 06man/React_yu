@@ -57,7 +57,7 @@ const PdItemBusanFo = ({ article }) => {
       )}
       <div className="contents">
         <h2>
-          제목: {MAIN_TITLE}
+          식당: {MAIN_TITLE}
         </h2>
         <p>소개 : {ITEMCNTNTS}</p>
         <p>주소 : {ADDR1}</p>
