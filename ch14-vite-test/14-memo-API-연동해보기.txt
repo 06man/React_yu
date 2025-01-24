@@ -1,0 +1,1462 @@
+14장 외부 API를 연동하여 뉴스 뷰어 만들기
+
+14.1 비동기 작업의 이해
+14.2 axios로 API 호출해서 데이터 받아 오기
+14.3 newsapi API 키 발급받기
+14.4 뉴스 뷰어 UI 만들기
+14.5 데이터 연동하기
+14.6 카테고리 기능 구현하기
+14.7 리액트 라우터 적용하기
+14.8 usePromise 커스텀 Hook 만들기
+14.9 정리
+
+
+지금까지 배운 것을 활용하여 카테고리별로 최신 뉴스 목록을 
+보여 주는 뉴스 뷰어 프로젝트를 진행해 보겠습니다. 
+
+https://newsapi.org/에서 제공하는 API를 사용하여 
+데이터를 받아 오고, 
+
+9장에서 배운 styled-components를 활용하여 
+프로젝트를 스타일링해 볼 것입니다.
+
+이번 실습은 다음 흐름으로 진행됩니다.
+
+비동기 작업의 이해
+axios로 API 호출해서 데이터 받아오기
+newsapi API 키 발급받기
+뉴스 뷰어 만들기
+데이터 연동하기
+카테고리 기능 구현하기
+리액트 라우터 적용하기
+
+외부 API와 연동하여 뉴스 뷰어 만들기
+
+
+14.1 비동기 작업의 이해
+웹 애플리케이션을 만들다 보면 처리할 때 
+시간이 걸리는 작업이 있습니다. 
+
+예를 들어 
+웹 애플리케이션에서 서버쪽 데이터가 필요할 때는 
+Ajax 기법을 사용하여 서버의 API를 호출함으로써 
+데이터를 수신합니다. 
+
+이렇게 서버의 API를 사용해야 할 때는 네트워크 송수신 과정에서 
+시간이 걸리기 때문에 작업이 즉시 처리되는 것이 아니라, 
+
+응답을 받을 때까지 기다렸다가 전달받은 응답 데이터를 처리합니다. 
+이 과정에서 해당 작업을 비동기적으로 처리하게 됩니다.
+
+만약 작업을 동기적으로 처리한다면 요청이 끝날 때까지 
+기다리는 동안 중지 상태가 되기 때문에 
+다른 작업을 할수 없습니다. 
+
+그리고 요청이 끝나야 비로소 그다음 예정된 작업을 할 수 있죠. 
+하지만 이를 비동기적으로 처리한다면 
+웹 애플리 케이션이 멈추지 않기 때문에 
+동시에 여러 가지 요청을 처리 할 수도 있고, 
+기다리는 과정에서 다른 함수도 호출할 수 있습니다.
+
+이렇게 서버 API를 호출할 때 외에도 
+작업을 비동기적으로 처리할 때가 있는데, 
+
+바로 SetTimeout 함수를 사용하여 특정 작업을 예약할 때입니다. 
+예를 들어 
+다음 코드는 3초 후에 printMe 함수를 호출합니다.
+
+function printMe() {
+  console.log('Hello World!');
+}
+
+setTimeout(printMe, 3000); // 3초 후에 printMe 함수 호출
+console.log('대기 중...');
+
+
+실행 결과 /
+대기 중...
+Hello World!
+
+setTimeout이 사용되는 시점에서 
+코드가 3초 동안 멈추는 것이 아니라, 
+
+일단 코드가 위부터 아래까지 다 호출되고 
+3초 뒤에 우리가 지정해준 printMe가 호출되고 있죠.
+
+자바스크립트에서 비동기 작업을 할 때 
+가장 흔히 사용하는 방법은 콜백 함수를 사용하는 것입니다. 
+
+위 코드에서는 printMe가 3초 뒤에 호출되도록 
+printMe 함수 자체를 setTimeout 함수의 인자로 전달해 주었는데, 
+이런 함수를 콜백 함수 라고 부릅니다.
+
+
+14.1.1 콜백 함수
+
+예를 들어 
+파라미터 값이 주어지면 1초 뒤에 
+10을 더해서 반환하는 함수가 있다고 가정해 보죠. 
+
+그리고 해당 함수가 처리된 직후 어떠한 작업을 하고 싶다면 
+다음과 같이 콜백 함수를 활용해서 작업합니다.
+
+function increase(number, callback) {
+  setTimeout(() => {
+    const result = number + 10;
+    if (callback) {
+      callback(result);
+    }
+  }, 1000);
+}
+
+console.log('작업 시작');
+
+increase(0, (result) => {
+  console.log(result); // 10
+  increase(result, (result) => {
+    console.log(result); // 20
+    increase(result, (result) => {
+      console.log(result); // 30
+      increase(result, (result) => {
+        console.log(result); // 40
+        console.log('작업 완료');
+      });
+    });
+  });
+});
+
+
+| 실행 결과 /
+
+작업 시작
+Hello World!
+10
+20
+30
+40
+작업 완료
+
+이렇게 콜백 안에 또 콜백을 넣어서 구현할 수 있는데, 
+너무 여러 번 중첩되니까 코드의 가독성이 나빠졌지요? 
+이러한 형태의 코드를 '콜백 지옥'이라고 부릅니다. 
+
+웬만하면 지양해야 할 형태의 코드죠.
+
+
+14.1.2 Promise
+
+Promise는 콜백 지옥 같은 코드가 형성되지 않게 하는 방안으로 
+ES6에 도입된 기능입니다. 
+
+앞에서 본 코드를 Promise 를 사용하여 구현해 볼까요? 
+다음 예제를 확인해 봅시다.
+
+function increase(number) {
+  const promise = new Promise((resolve, reject) => {
+    // resolve는 성공, reject는 실패
+    setTimeout(() => {
+      const result = number + 10;
+      if (result > 50) {
+        // 50보다 높으면 에러 발생시키기
+        const e = new Error('NumberTooBig');
+        return reject(e);
+      }
+      resolve(result); // number 값에 +10 후 성공 처리
+    }, 1000);
+  });
+  return promise;
+}
+
+increase(0)
+  .then((number) => {
+    // Promise에서 resolve된 값은 then을 통해 받아 올 수 있음
+    console.log(number); // 출력: 10
+    return increase(number); // Promise를 리턴하면 다음 then에서 처리 가능
+  })
+  .then((number) => {
+    console.log(number); // 출력: 20
+    return increase(number);
+  })
+  .then((number) => {
+    console.log(number); // 출력: 30
+    return increase(number);
+  })
+  .then((number) => {
+    console.log(number); // 출력: 40
+    return increase(number);
+  })
+  .then((number) => {
+    console.log(number); // 출력: 50
+    return increase(number); // 여기서 에러 발생
+  })
+  .catch((e) => {
+    // 도중에 에러가 발생한다면 .catch를 통해 알 수 있음
+    console.log(e.message); // 출력: NumberTooBig
+  });
+
+
+
+여러 작업을 연달아 처리한다고 해서 함수를 
+여러 번 감싸는 것이 아니라 
+.then을 사용하여 
+그 다음 작업을 설정하기 때문에 콜백 지옥이 형성되지 않습니다.
+
+
+14.1.3 async/await
+
+async/await는 Promise를 더욱 쉽게 사용할 수 있도록 
+해주는 ES2017(ES8) 문법입니다. 
+
+이 문법을 사용하려면 함수의 앞부분에 async 키워드를 추가하고, 
+해당 함수 내부에서 Promise의 앞부분에 await 키워드를 사용합니다. 
+
+이렇게 하면 Promise가 끝날 때까지 기다리고, 
+결과 값을 특정 변수에 담을 수 있습니다.
+
+function increase(number) {
+  const promise = new Promise((resolve, reject) => {
+    // resolve는 성공, reject는 실패
+    setTimeout(() => {
+      const result = number + 10;
+      if (result > 50) {
+        // 50보다 높으면 에러 발생시키기
+        const e = new Error('NumberTooBig');
+        return reject(e);
+      }
+      resolve(result); // number 값에 +10 후 성공 처리
+    }, 1000);
+  });
+  return promise;
+}
+
+async function runTasks() {
+  try {
+    // try/catch 구문을 사용하여 에러를 처리합니다.
+    let result = await increase(0);
+    console.log(result); // 출력: 10
+    result = await increase(result);
+    console.log(result); // 출력: 20
+    result = await increase(result);
+    console.log(result); // 출력: 30
+    result = await increase(result);
+    console.log(result); // 출력: 40
+    result = await increase(result);
+    console.log(result); // 출력: 50
+    result = await increase(result); // 여기서 에러 발생
+    console.log(result);
+  } catch (e) {
+    console.log(e.message); // 출력: NumberTooBig
+  }
+}
+
+runTasks();
+
+
+
+14.2 axios로 API 호출해서 데이터 받아오기
+
+
+axios는 현재 가장 많이 사용되고 있는 자바스크립트 
+HTTP클라이언트입니다. 
+
+이 라이브러리의 특징은 HTTP 요청을 Promise 기반으로 처리한다는 점입니다. 
+리액트 프로젝트를 생성하여 이 라이브러리를 설치하고 
+사용하는 방법을 한번 알아보겠습니다.
+
+$ yarn create react-app news-viewer
+
+$ cd news-viewer 
+$ yarn add axios
+
+Prettier로 코드 스타일을 자동으로 정리하고 싶다면, 
+프로 젝트의 최상위 디렉터리에 prettierrc 파일을 생성하여 
+다음 설정을 입력하세요.
+.prettierre {
+"singleQuote": true,
+"semi": true,
+"useTabs": false,
+"tabWidth": 2,
+"trailingComma": "all",
+"printWidth": 80
+}
+
+그리고 VSCode에서 파일 자동 불러오기 기능을 
+잘 활용하고 싶다면 최상위 디렉터리에 jsconfig.json 파일도 만들어
+
+주세요.
+jsconfig.json
+{
+"compilerOptions": {
+"target": "es6"
+}
+}
+
+이제 App.js 코드를 전부 지우고 다음과 같이 새로 작성해 보세요.
+App.js
+
+import React, { useState } from 'react';
+import axios from 'axios';
+
+const App = () => {
+  const [data, setData] = useState(null);
+
+  const onClick = () => {
+    axios
+      .get('https://jsonplaceholder.typicode.com/todos/1')
+      .then((response) => {
+        setData(response.data);
+      });
+  };
+
+  return (
+    <div>
+      <div>
+        <button onClick={onClick}>불러오기</button>
+      </div>
+      {data && (
+        <textarea
+          rows={7}
+          value={JSON.stringify(data, null, 2)}
+          readOnly={true}
+        />
+      )}
+    </div>
+  );
+};
+
+export default App;
+
+
+JSON.stringify(data, null, 2) 의미:
+data: JSON 문자열로 변환할 상태 값.
+null: 모든 속성을 포함하여 변환.
+2: 들여쓰기를 2칸 공백으로 설정.
+
+
+위 코드는 불러오기 버튼을 누르면 
+JSONPlaceholder(https ://jsonplaceholder.typicode.com/)에서 
+제공하는 가짜 API를 호출하고 이에 대한 응답을 
+컴포넌트 상태에 넣어서 보여 주는 예제입니다.
+
+onClick 함수에서는 axios.get 함수를 사용했습니다. 
+이 함수는 파라미터로 전달된 주소에 GET 요청을 해줍니다. 
+
+그리고 이에 대한 결과는 then을 통해 비동기적으로 확인할 수 있습니다.
+위 코드에 async를 적용하면 어떨까요?
+App.js
+
+import React, { useState } from 'react';
+import axios from 'axios';
+
+const App = () => {
+  const [data, setData] = useState(null);
+//변경
+  const onClick = async () => {
+    try {
+      const response = await axios.get('https://jsonplaceholder.typicode.com/todos/1');
+      setData(response.data);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  return (
+    <div>
+      <div>
+        <button onClick={onClick}>불러오기</button>
+      </div>
+      {data && (
+        <textarea
+          rows={7}
+          value={JSON.stringify(data, null, 2)}
+          readOnly={true}
+        />
+      )}
+    </div>
+  );
+};
+
+export default App;
+
+
+
+화살표 함수에 async/await를 적용할 때는 
+async () => { }와 같은 형식으로 적용합니다. 
+불러오기 버튼을 눌렀을 때 이전과 똑같이 데이터가 잘 불러 오나요?
+
+
+파라미터로 넣어서 사용하면 됩니다.
+이제 우리가 사용할 API에 대해 알아봅시다.
+https://newsapi.org/s/south-korea-news-api 
+링크에 들어가면 한국 뉴스를 가져오는 API에 대한 설명서가 있습니다.
+
+
+사용할 API 주소는 두 가지 형태입니다.
+
+kr 뉴스, 안 받아 지면, 
+us 로 임시로 하기
+
+1. 전체 뉴스 불러오기
+GET https://newsapi.org/v2/top-headlines?country=us&apiKey=b7adb4f936494b3bac62f446ab7686cb
+
+https://newsapi.org/v2/everything?q=bitcoin&apiKey=b7adb4f936494b3bac62f446ab7686cb
+
+2. 특정 카테고리 뉴스 불러오기
+GET https://newsapi.org/v2/top-headlines?country=us&category=technology&apiKey=b7adb4f936494b3bac62f446ab7686cb
+
+여기서 카테고리는 business, entertainment, health, 
+science, sports, technology 중에 골라서 사용할 수 있습니다 . 
+
+카테고리를 생략하면 모든 카테고리의 뉴스를 불러옵니다.
+
+apikey 값에는 앞에서 여러분이 발급받았던 API 키를 입력해 주세요.
+
+이제 기존에 리액트 프로젝트에서 사용했던 
+JSONPlaceholder 가짜 API를 
+전체 뉴스를 불러오는 API로 대체해 보세요
+
+App.js
+
+import React, { useState } from 'react';
+import axios from 'axios';
+
+const App = () => {
+  const [data, setData] = useState(null);
+
+  const onClick = async () => {
+    try {
+	//교체
+      const response = await axios.get(
+        'https://newsapi.org/v2/top-headlines?country=us&apiKey=0a8c4202385d4ec1bb93b7e277b3c51f'
+      );
+      setData(response.data);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  return (
+    <div>
+      <div>
+        <button onClick={onClick}>불러오기</button>
+      </div>
+      {data && (
+        <textarea
+          rows={7}
+          value={JSON.stringify(data, null, 2)}
+          readOnly={true}
+        />
+      )}
+    </div>
+  );
+};
+
+export default App;
+
+
+
+데이터가 잘 나타나나요? 
+이제 이 데이터를 화면에 예쁘게 보여 주면 되겠지요?
+
+
+14.4 뉴스 뷰어 UI 만들기
+
+styled-components를 사용하여 
+뉴스 정보를 보여줄 컴포넌트를 만들어 보겠습니다. 
+
+우선 styled-components를 설치해 주세요.
+
+$ yarn add styled-components
+
+그리고 src 디렉터리 안에 components 디렉터리를 생성한 뒤, 
+그 안에 NewsItem.js와 NewsList.js 파일을 생성하세요. 
+
+NewsItem은 각 뉴스 정보를 보여 주는 컴포넌트이고, 
+NewsList는 API를 요청하고 뉴스 데이터가 들어있는 배열을 
+컴포넌트 배열로 변환하여 렌더링해 주는 컴포넌트입니다.
+
+
+14.4.1 NewsItem 만들기
+
+먼저 NewsItem 컴포넌트 코드를 작성해 보겠습니다. 
+그 전 에 각 뉴스 데이터에는 어떤 필드가 있는지 확인해 봅시다.
+
+{
+"source": 
+  {
+
+	"id": null,
+	"name": "Donga.com"
+	"author": null,
+	"title": 새 집 냄새" "주택 청약 고마워!"..이시언 아파 트 공개 - 동아일보"
+	"description": "배우 이시언(37)이 자신의 새 아파트를 공 개했다. 이시언은 25일 방송한 MBC 예능 '나 혼자 산다'에서 정든 옛집을 떠나 새 아파트로 이사했다. 이사한 아파트에 도착한 ...",
+	"url": http://news.donga.com/Main/3/all/20190126/93869
+
+
+위 코드는 각 뉴스 데이터가 지니고 있는 정보로 이루어진 JSON 객체입니다. 
+그중에서 다음 필드를 리액트 컴포넌트에 나타내겠습니다.
+
+  title: 제목
+  description: 내용
+  url: 링크
+  urlTolmage: 뉴스 이미지
+  
+NewsItem 컴포넌트는 article이라는 객체를 
+props로 통째로 받아 와서 사용합니다. 
+
+NewsItem 컴포넌트를 다음과 같이 작성해 보세요.
+
+components/NewsItem.js
+
+import styled from 'styled-components';
+
+const NewsItemBlock = styled.div`
+  display: flex;
+  .thumbnail {
+    margin-right: 1rem;
+    img {
+      display: block;
+      width: 160px;
+      height: 100px;
+      object-fit: cover;
+    }
+  }
+  .contents {
+    h2 {
+      margin: 0;
+      a {
+        color: black;
+        text-decoration: none;
+      }
+    }
+    p {
+      margin: 0;
+      line-height: 1.5;
+      margin-top: 0.5rem;
+      white-space: normal;
+    }
+  }
+  & + & {
+    margin-top: 3rem;
+  }
+`;
+
+const NewsItem = ({ article }) => {
+  const { title, description, url, urlToImage } = article;
+
+  return (
+    <NewsItemBlock>
+      {urlToImage && (
+        <div className="thumbnail">
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            <img src={urlToImage} alt="thumbnail" />
+          </a>
+        </div>
+      )}
+      <div className="contents">
+        <h2>
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            {title}
+          </a>
+        </h2>
+        <p>{description}</p>
+      </div>
+    </NewsItemBlock>
+  );
+};
+
+export default NewsItem;
+
+
+
+14.4.2 NewsList 만들기
+
+이번에는 NewsList 컴포넌트를 만들어 보겠습니다. 
+나중에 이 컴포넌트에서 API를 요청하게 될텐데요. 
+지금은 아직 데이터를 불러오지 않고 있으니 
+
+SampleArticle이라는 객체에 미리 예시 데이터를 넣은 후 
+각 컴포넌트에 전달하여 가짜 내용이 보이게 해 보세요.
+
+components/ NewsList.js
+
+import styled from 'styled-components';
+import NewsItem from './NewsItem';
+
+const NewsListBlock = styled.div`
+  box-sizing: border-box;
+  padding-bottom: 3rem;
+  width: 768px;
+  margin: 0 auto;
+  margin-top: 2rem;
+  @media screen and (max-width: 768px) {
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+`;
+
+const sampleArticle = {
+  title: '제목',
+  description: '내용',
+  url: 'https://google.com',
+  urlToImage: 'https://reqres.in/img/faces/7-image.jpg',
+};
+
+const NewsList = () => {
+  return (
+    <NewsListBlock>
+      <NewsItem article={sampleArticle} />
+      <NewsItem article={sampleArticle} />
+      <NewsItem article={sampleArticle} />
+      <NewsItem article={sampleArticle} />
+      <NewsItem article={sampleArticle} />
+      <NewsItem article={sampleArticle} />
+    </NewsListBlock>
+  );
+};
+
+export default NewsList;
+
+
+
+다 만든 뒤에는 이 컴포넌트를 ApP 컴포넌트에서 보여주세요. 
+App 컴포넌트에 기존에 작성했던 코드는 모두 지우고, 
+NewsList만 렌더링해 보세요.
+
+App.js
+
+import NewsList from './components/NewsList';
+const App = () => {
+return <NewsList />;
+};
+export default App;
+
+
+
+컴포넌트들이 잘 나타났나요?
+
+
+14.5 데이터 연동하기
+
+이제 NewsList 컴포넌트에서 이전에 연습 삼아 사용했던 
+API를 호출해 보겠습니다. 
+
+컴포넌트가 화면에 보이는 시점에 API를 요청해 볼 텐데요. 
+
+이때 useEffect를 사용하여 컴포넌트가 
+처음 렌더링되는 시점에 API를 요청하면 됩니다. 
+
+여기서 주의할 점은 useEffect에 등록하는 함수에 
+async를 붙이면 안 된다는 것입니다. 
+
+useEffect에서 반환해야 하는 값은 
+뒷정리 함수이기 때문입니다. 
+
+따라서 useEffect 내부에서 async/await를 사용하고 싶다면, 
+함수 내부에 async 키워드가 붙은 또 다른 함수를 만들어서 
+사용해 주어야 합니다.
+
+추가로 Loading이라는 상태도 관리하여 
+API 요청이 대기중인지 판별할 것입니다. 
+
+요청이 대기 중일 때는 Loading 값이 true가 되고, 
+요청이 끝나면 Loading 값이 false가 되어야 합니다.
+
+components/NewsList.js
+
+//추가
+import { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import NewsItem from './NewsItem';
+//추가
+import axios from 'axios';
+
+const NewsListBlock = styled.div`
+  box-sizing: border-box;
+  padding-bottom: 3rem;
+  width: 768px;
+  margin: 0 auto;
+  margin-top: 2rem;
+
+  @media screen and (max-width: 768px) {
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+`;
+
+const NewsList = () => {
+//추가
+  const [articles, setArticles] = useState(null);
+  const [loading, setLoading] = useState(false);
+//추가
+  useEffect(() => {
+    // async를 사용하는 함수 선언
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          'https://newsapi.org/v2/top-headlines?country=us&apiKey=0a8c4202385d4ec1bb93b7e277b3c51f'
+        );
+        setArticles(response.data.articles);
+      } catch (e) {
+        console.log(e);
+      }
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
+  
+//추가
+  // 대기 중일 때
+  if (loading) {
+    return <NewsListBlock>대기 중...</NewsListBlock>;
+  }
+
+//추가
+  // 아직 articles 값이 설정되지 않았을 때
+  if (!articles) {
+    return null;
+  }
+
+  // articles 값이 유효할 때
+  return (
+    <NewsListBlock>
+	//추가
+      {articles.map((article) => (
+        <NewsItem key={article.url} article={article} />
+      ))}
+    </NewsListBlock>
+  );
+};
+
+export default NewsList;
+
+
+데이터를 불러와서 뉴스 데이터 배열을 map 함수를 사용하여 
+컴포넌트 배열로 변환할 때 
+신경 써야 할 부분이 있습니다.
+
+map 함수를 사용하기 전에 꼭 articles를 조회하여 
+해당 값 이 현재 null이 아닌지 검사해야 합니다. 
+
+이 작업을 하지 않으면, 아직 데이터가 없을 때 
+null에는 map 함수가 없기 때문에 렌더링 과정에서 오류가 발생합니다. 
+그래서 애플리케이션이 제대로 나타나지 않고 흰 페이지만 보이게 됩니다.
+
+이제 뉴스 정보가 잘 보이는지 확인해 보세요.
+
+
+뉴스가 잘 보이나요?
+
+
+
+14.6 카테고리 기능 구현하기
+
+이번에는 뉴스의 카테고리 선택 기능을 구현해 보겠습니다.
+뉴스 카테고리는 총 여섯 개이며, 다음과 같이 영어로 되어있습니다.
+
+  business(비즈니스)
+  entertainment(연예)
+  health (건강)
+  science(과학)
+  Sports(스포츠)
+  technology (기술)
+
+화면에 카테고리를 보여 줄 때는 영어로 된 값을 그대로 보여 주지 않고, 
+다음 그림처럼 한글로 보여 준 뒤 클릭했을 때는 
+영어로 된 카테고리 값을 사용하도록 구현하겠습니다.
+
+전체보기 비즈니스 엔터테인먼트 건강 과학 스포츠 기술
+
+카테고리 컴포넌트 미리보기
+
+
+14.6.1 카테고리 선택 UI 만들기
+
+먼저 components 디렉터리에 
+Categories.js 컴포넌트 파일을 생성하여 다음 코드를 작성하세요.
+
+components/Categories.js
+
+import styled from 'styled-components';
+
+const categories = [
+  { name: 'all', text: '전체보기' },
+  { name: 'business', text: '비즈니스' },
+  { name: 'entertainment', text: '엔터테인먼트' },
+  { name: 'health', text: '건강' },
+  { name: 'science', text: '과학' },
+  { name: 'sports', text: '스포츠' },
+  { name: 'technology', text: '기술' },
+];
+
+const CategoriesBlock = styled.div`
+  // flexbox를 사용하여 자식 요소들을 가로로 배치
+  display: flex;
+
+  // 컨테이너 내부에 1rem(16px) 간격으로 패딩 추가
+  padding: 1rem;
+
+  // 컨테이너의 기본 너비를 768px로 설정
+  width: 768px;
+
+  // 컨테이너를 화면 가운데 정렬
+  margin: 0 auto;
+
+  // 화면 너비가 768px 이하일 경우에 적용
+  @media screen and (max-width: 768px) {
+    // 컨테이너 너비를 화면의 100%로 설정
+    width: 100%;
+
+    // 가로 스크롤을 허용 (내부 콘텐츠가 넘칠 경우)
+    overflow-x: auto;
+  }
+`;
+
+const Category = styled.div`
+  // 텍스트 크기를 1.125rem(18px)로 설정
+  font-size: 1.125rem;
+
+  // 커서를 포인터(손 모양)로 변경하여 클릭 가능하다는 표시
+  cursor: pointer;
+
+  // 텍스트가 줄바꿈 없이 한 줄로 표시되도록 설정
+  white-space: pre;
+
+  // 텍스트에 밑줄 제거
+  text-decoration: none;
+
+  // 기본 텍스트 색상을 상속받도록 설정
+  color: inherit;
+
+  // 아래쪽에 0.25rem(4px) 간격 추가
+  padding-bottom: 0.25rem;
+
+  // hover 상태에서 텍스트 색상을 #495057로 변경
+  &:hover {
+    color: #495057;
+  }
+
+  // 동일한 요소가 연속으로 배치될 때, 각 요소 간에 왼쪽 간격 1rem 추가
+  & + & {
+    margin-left: 1rem;
+  }
+`;
+
+const Categories = () => {
+  return (
+    <CategoriesBlock>
+      {categories.map((c) => (
+        <Category key={c.name}>{c.text}</Category>
+      ))}
+    </CategoriesBlock>
+  );
+};
+
+export default Categories;
+
+
+위 코드에서는 Categories라는 배열 안에 name과 text 값이
+들어가 있는 객체들을 넣어 주어서 
+한글로 된 카테고리와 실제 카테고리 값을 연결시켜 주었습니다. 
+
+여기서 name은 실제 카테고리 값을 가리키고, 
+text 값은 렌더링할 때 사용할 한글 카테고리를 가리킵니다.
+
+다 만든 컴포넌트는 App에서 NewsList 컴포넌트 상단에 렌더링하세요.
+
+App.js
+
+import NewsList from './components/NewsList';
+//추가
+import Categories from './components/Categories';
+
+const App = () => {
+  return (
+    <>
+	{/* 추가 */}
+      <Categories />
+      <NewsList />
+    </>
+  );
+};
+
+export default App;
+
+
+다음과 같이 상단에 카테고리 목록이 나타났나요?
+
+
+이제 App에서 Category 상태를 Usestate로 관리하겠습니다. 
+추가로 category 값을 업데이트하는 
+onSelect라는 함수도 만들어 주겠습니다. 
+
+그러고 나서 Category와 onselect 함수를 Categories 컴포넌트에게 
+props로 전달해 주세요.
+
+또한, category 값을 NewsList 컴포넌트에게도 전달해 주어야 합니다.
+
+App.js
+
+//추가
+import { useState, useCallback } from 'react';
+import NewsList from './components/NewsList';
+import Categories from './components/Categories';
+
+const App = () => {
+//추가
+  const [category, setCategory] = useState('all');
+  const onSelect = useCallback((category) => setCategory(category), []);
+
+  return (
+    <>
+	 {/* 추가 */}
+      <Categories category={category} onSelect={onSelect} />
+      <NewsList category={category} />
+    </>
+  );
+};
+
+export default App;
+
+
+다음으로 Categories에서는 props로 전달받은 
+onSelect를 각 Category 컴포넌트의 onClick으로 설정해 주고, 
+현재 선 택된 카테고리 값에 따라 다른 스타일을 적용시켜 보세요.
+
+components/Categories.js
+
+//추가
+import styled, { css } from 'styled-components';
+
+const categories = [
+  { name: 'all', text: '전체보기' },
+  { name: 'business', text: '비즈니스' },
+  { name: 'entertainment', text: '엔터테인먼트' },
+  { name: 'health', text: '건강' },
+  { name: 'science', text: '과학' },
+  { name: 'sports', text: '스포츠' },
+  { name: 'technology', text: '기술' },
+];
+
+const CategoriesBlock = styled.div`
+  display: flex;
+  padding: 1rem;
+  width: 768px;
+  margin: 0 auto;
+
+  @media screen and (max-width: 768px) {
+    width: 100%;
+    overflow-x: auto;
+  }
+`;
+
+const Category = styled.div`
+  font-size: 1.125rem;
+  cursor: pointer;
+  white-space: pre;
+  text-decoration: none;
+  color: inherit;
+  padding-bottom: 0.25rem;
+
+  &:hover {
+    color: #495057;
+  }
+
+//추가
+  ${(props) =>
+    props.active &&
+    css`
+      font-weight: 600;
+      border-bottom: 2px solid #22b8cf;
+      color: #22b8cf;
+
+      &:hover {
+        color: #3bc9db;
+      }
+    `}
+
+  & + & {
+    margin-left: 1rem;
+  }
+`;
+
+//추가
+const Categories = ({ onSelect, category }) => {
+  return (
+    <CategoriesBlock>
+      {categories.map((c) => (
+        <Category
+          key={c.name}
+          active={category === c.name}
+		  //   추가
+          onClick={() => onSelect(c.name)}
+        >
+          {c.text}
+        </Category>
+      ))}
+    </CategoriesBlock>
+  );
+};
+
+export default Categories;
+
+
+
+다음과 같이 선택된 카테고리가 청록색으로 보이나요? 
+다른 카테고리도 클릭해 보세요. 잘 선택되나요?
+
+
+
+14.6.2 API를 호출할 때 카테고리 지정하기 
+
+지금은 뉴스 API를 요청할 때 따로 카테고리를 선택하지 않고 
+뉴스 목록을 불러오고 있습니다. 
+
+NewsList 컴포넌트에서 현재 props로 받아온 category에 따라 
+카테고리를 지정하여 API를 요청하도록 구현해 보세요.
+
+components/NewsList.js
+
+import { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import NewsItem from './NewsItem';
+import axios from 'axios';
+
+const NewsListBlock = styled.div`
+  box-sizing: border-box;
+  padding-bottom: 3rem;
+  width: 768px;
+  margin: 0 auto;
+  margin-top: 2rem;
+
+  @media screen and (max-width: 768px) {
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+`;
+
+//추가
+const NewsList = ({ category }) => {
+  const [articles, setArticles] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // async를 사용하는 함수 선언
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+	  //추가
+        const query = category === 'all' ? '' : `&category=${category}`;
+		//추가       
+	   const response = await axios.get(
+          `https://newsapi.org/v2/top-headlines?country=us${query}&apiKey=0a8c4202385d4ec1bb93b7e277b3c51f`
+        );
+        setArticles(response.data.articles);
+      } catch (e) {
+        console.log(e);
+      }
+      setLoading(false);
+    };
+
+    fetchData();
+	 //추가
+  }, [category]);
+
+  // 대기 중일 때
+  if (loading) {
+    return <NewsListBlock>대기 중...</NewsListBlock>;
+  }
+
+  // articles 값이 없을 때
+  if (!articles) {
+    return null;
+  }
+
+  // articles 값이 있을 때
+  return (
+    <NewsListBlock>
+      {articles.map((article) => (
+        <NewsItem key={article.url} article={article} />
+      ))}
+    </NewsListBlock>
+  );
+};
+
+export default NewsList;
+
+
+
+현재 category 값이 무엇인지에 따라 요청할 주소가 
+동적으로 바뀌고 있습니다. 
+Category 값이 all이라면 query 값을 공백으로 설정하고, 
+all이 아니라면 "&category=카테고리" 형태의 문자열을 만들도록 했습니다. 
+
+그리고 이 query를 요청할 때 주소에 포함시켜 주었습니다.
+
+추가로 category 값이 바뀔 때마다 
+뉴스를 새로 불러와야 하기 때문에 useEffect의 
+의존 배열(두 번째 파라미터로 설정 하는 배열)에 
+category를 넣어 주어야 합니다.
+
+만약 여러분이 이 컴포넌트를 클래스형 컴포넌트로 만들게 된다면
+componentDidMount와 ComponentDidUpdate에서 
+요청을 시작하도록 설정해 주어야 하는데요, 
+함수 컴포넌트라면 이렇게 useEffect 한번으로 
+컴포넌트가 맨 처음 렌더링 될 때, 
+
+그리고 category 값이 바뀔 때 요청하도록 설정해 줄수 있습니다.
+여기까지 작업을 마쳤다면 브라우저를 열어서 다른 카테고리를 선택해 보세요. 
+카테고리에 따른 뉴스가 잘 나타나나요?
+
+
+여기서부터
+
+14.7 리액트 라우터 적용하기
+
+방금 진행한 뉴스 뷰어 프로젝트에 리액트 라우터를 적용해 보겠습니다. 
+기존에는 카테고리 값을 usestate로 관리했는데요. 
+
+이번에는 이 값을 리액트 라우터의 URL 파라미터를 사용하여 관리해 보겠습니다.
+
+
+14.7.1 리액트 라우터의 설치 및 적용 
+
+우선 현재 프로젝트에 리액트 라우터를 설치하세요.
+$ yarn add react-router-dom
+
+그리고 index.js에서 리액트 라우터를 적용하세요.
+
+import ReactDOM from 'react-dom';
+import './index.css';
+import App from './App';
+//추가
+import { BrowserRouter } from 'react-router-dom';
+
+ReactDOM.render(
+//추가
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>,
+  document.getElementById('root')
+);
+
+
+
+14.7.2 NewsPage 생성 
+
+이번 프로젝트에 리액트 라우터를 적용할 때 
+만들어야 할 페이지는 단 하나입니다. 
+Src 디렉터리에 pages라는 디렉터리를 생성하고, 
+그 안에 NewsPage.js 파일을 만들어서 다음과 같이 작성해 보세요.
+
+pages/NewsPage.jsx
+
+import { useParams } from 'react-router-dom';
+import Categories from '../components/Categories';
+import NewsList from '../components/NewsList';
+
+const NewsPage = () => {
+  const params = useParams();
+  // 카테고리가 선택되지 않았으면 기본값 'all'로 사용
+  const category = params.category || 'all';
+
+  return (
+    <>
+      <Categories />
+      <NewsList category={category} />
+    </>
+  );
+};
+
+export default NewsPage;
+
+
+
+현재 선택된 category 값을 URL 파라미터를 통해 
+사용할 것이므로 Categories 컴포넌트에서 
+현재 선택된 카테고리 값을 알려 줄 필요도 없고, 
+onSelect 함수를 따로 전달해 줄 필요도 없습니다.
+
+다 만들었으면 App의 기존 내용을 모두 지우고 Route를 정의해 주세요
+
+App.js
+
+//추가
+import { Route, Routes } from 'react-router-dom';
+//추가
+import NewsPage from './pages/NewsPage';
+
+const App = () => {
+  return (
+   {/* 추가 */}
+    <Routes>
+      <Route path="/" element={<NewsPage />} />
+      <Route path="/:category" element={<NewsPage />} />
+    </Routes>
+  );
+};
+
+export default App;
+
+
+
+경로에 category URL 파라미터가 없어도 
+NewsPage 컴포넌트를 보여줘야 하고, 
+
+Category가 있어도 NewsPage를 보여줘야 하기 때문에 
+Route 컴포넌트를 두 번 사용했습니다.
+
+
+14.7.3 Categories에서 NavLink 사용하기 
+
+이제 Categories에서 기존의 onSelect 함수를 호출하여 
+카테고리를 선택하고, 
+
+선택된 카테고리에 다른 스타일을 주는 기능을 
+NavLink로 대체해 보겠습니다.
+ 
+div, a, button input처럼 일반 HTML 요소가 아닌 
+특정 컴포넌트에 styled-components를 사용할 때는 
+
+styled(컴포넌트이름)` `과 같 은 형식을 사용합니다.
+
+정의
+
+components/Categories.js
+
+import styled from 'styled-components';
+//추가
+import { NavLink } from 'react-router-dom';
+
+const categories = [
+  { name: 'all', text: '전체보기' },
+  { name: 'business', text: '비즈니스' },
+  { name: 'entertainment', text: '엔터테인먼트' },
+  { name: 'health', text: '건강' },
+  { name: 'science', text: '과학' },
+  { name: 'sports', text: '스포츠' },
+  { name: 'technology', text: '기술' },
+];
+
+const CategoriesBlock = styled.div`
+  display: flex;
+  padding: 1rem;
+  width: 768px;
+  margin: 0 auto;
+
+  @media screen and (max-width: 768px) {
+    width: 100%;
+    overflow-x: auto;
+  }
+`;
+
+// 교체
+const Category = styled(NavLink)`
+  font-size: 1.125rem;
+  cursor: pointer;
+  white-space: pre;
+  text-decoration: none;
+  color: inherit;
+  padding-bottom: 0.25rem;
+
+  &:hover {
+    color: #495057;
+  }
+
+  &.active {
+    font-weight: 600;
+    border-bottom: 2px solid #22b8cf;
+    color: #22b8cf;
+
+    &:hover {
+      color: #3bc9db;
+    }
+  }
+
+  & + & {
+    margin-left: 1rem;
+  }
+`;
+
+const Categories = () => {
+  return (
+    <CategoriesBlock>
+      {categories.map((c) => (
+        <Category
+          key={c.name}
+          to={c.name === 'all' ? '/' : `/${c.name}`}
+        >
+          {c.text}
+        </Category>
+      ))}
+    </CategoriesBlock>
+  );
+};
+
+export default Categories;
+
+to는 React Router의 Link 또는 NavLink에서만 동작하는 속성입니다.
+
+
+NavLink로 만들어진 Category 컴포넌트에 to 값은 
+"/카테 고리이름으로 설정해 주었습니다. 
+그리고 카테고리 중에서 전체보기의 경우는 예외적으로 
+"/all" 대신에 "/"로 설정했습니다.
+
+작업을 마쳤다면, 카테고리를 클릭할 때 
+페이지 주소가 바뀌고 이에 따라 뉴스 목록을 잘 보여 주는지 확인하세요.
+
+
+이제 구현해야 할 기능을 모두 완성했습니다!
+
+
+14.8 usePromise 커스텀 Hook 만들기
+
+이번에는 컴포넌트에서 API 호출처럼 Promise를 
+사용해야 하는 경우 더욱 간결하게 코드를 작성할 수 있도록 
+해 주는 커스텀 Hook을 만들어서 우리 프로젝트에 적용 해보겠습니다.
+
+우리가 만들 Hook의 이름은 usePromise입니다. 
+
+src 디렉터리에 lib 디렉터리를 만들고, 
+그 안에 usePromise.js를 다음 과 같이 작성해 보세요.
+
+lib/usePromise.js
+
+import { useState, useEffect } from 'react';
+
+export default function usePromise(promiseCreator, deps) {
+  // 대기 중/완료/실패에 대한 상태 관리
+  const [loading, setLoading] = useState(false);
+  const [resolved, setResolved] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const process = async () => {
+      setLoading(true);
+      try {
+        const resolved = await promiseCreator();
+        setResolved(resolved);
+      } catch (e) {
+        setError(e);
+      }
+      setLoading(false);
+    };
+
+    process();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+
+  return [loading, resolved, error];
+}
+
+
+프로젝트의 다양한 곳에서 사용될 수 있는 유틸 함수들은 
+보통 이렇게 src 디렉터리에 lib 디렉터리를 만든 후 그 안에 작성합니다.
+
+방금 만든 usepromise Hook은 Promise의 
+대기 중, 완료 결 과, 실패 결과에 대한 상태를 관리하며, 
+usePromise의 의존 배열 deps를 파라미터로 받아옵니다. 
+
+파라미터로 받아 온 deps 배열은 usePromise 내부에서 
+사용한 useEffect의 의존 배열로 설정되는데요. 
+
+이 배열을 설정하는 부분에서 ESLint 경고가 나타나게 됩니다.
+이 경고를 무시하려면 특정 줄에서만 ESLint 규칙을 
+무시하도록 주석을 작성해 주어야 합니다. 
+에디터에 초록색 경고 줄이 그어졌을 때 
+그 위에 커서를 올리면 빠른 수정···이라는 문구가 나타나는데, 
+이를 클릭하면 자동으로 ESLint 규칙을 비 활성화시키는 주석을 입력할 수 있습니다.
+
+
+코드를 저장한 뒤 NewsList 컴포넌트에서 usePromise를 사용해 보세요.
+
+components/NewsList.js
+
+import styled from 'styled-components';
+import NewsItem from './NewsItem';
+import axios from 'axios';
+//추가
+import usePromise from '../lib/usePromise';
+
+const NewsListBlock = styled.div`
+  box-sizing: border-box;
+  padding-bottom: 3rem;
+  width: 768px;
+  margin: 0 auto;
+  margin-top: 2rem;
+
+  @media screen and (max-width: 768px) {
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+`;
+
+const NewsList = ({ category }) => {
+//추가
+  const [loading, resolved, error] = usePromise(() => {
+    const query = category === 'all' ? '' : `&category=${category}`;
+    return axios.get(
+      `https://newsapi.org/v2/top-headlines?country=us${query}&apiKey=0a8c4202385d4ec1bb93b7e277b3c51f`
+    );
+  }, [category]);
+
+  // 대기 중일 때
+  if (loading) {
+    return <NewsListBlock>대기 중...</NewsListBlock>;
+  }
+
+  // 아직 resolved 값이 설정되지 않았을 때
+  if (!resolved) {
+    return null;
+  }
+
+//추가
+  // 에러가 발생했을 때
+  if (error) {
+    return <NewsListBlock>에러 발생!</NewsListBlock>;
+  }
+
+//추가
+  // resolved 값이 유효할 때
+  const { articles } = resolved.data;
+  return (
+    <NewsListBlock>
+      {articles.map((article) => (
+        <NewsItem key={article.url} article={article} />
+      ))}
+    </NewsListBlock>
+  );
+};
+
+export default NewsList;
+
+
+usePromise를 사용하면 NewsList에서 대기 중 상태 관리와
+useEffect 설정을 직접 하지 않아도 되므로 코드가 훨씬 간 결해집니다. 
+요청 상태를 관리할 때 무조건 커스텀 Hook을 만들어서 
+사용해야 하는 것은 아니지만, 상황에 따라 적절히
+사용하면 좋은 코드를 만들어 갈 수 있습니다.
+
+
+14.9 정리
+이 장에서는 외부 API를 연동하여 사용하는 방법을 알아보고, 
+지금까지 배운 것을 활용하여 실제로 쓸모 있는 프로젝트를 개발해 보았습니다. 
+
+리액트 컴포넌트에서 API를 연동하여 개발할 때 절대 잊지 말아야 할 
+유의 사항은 useEffect에 등록하는 함수는 async로 작성하면 
+안 된다는 점입니다. 
+그 대신 함수 내부에 async 함수를 따로 만들어 주어야 합니다.
+
+지금은 usePromise라는 커스텀 Hook을 만들어 사용함으로써 
+코드가 조금 간결해지기는 했지만, 
+나중에 사용해야 할 API의 종류가 많아지면 
+요청을 위한 상태 관리를 하는 것이 번거로워질 수 있습니다. 
+뒤에 나올 리스와 리덕스 미들웨 어를 배우면 
+좀 더 쉽게 요청에 대한 상태를 관리할 수 있습니다.
